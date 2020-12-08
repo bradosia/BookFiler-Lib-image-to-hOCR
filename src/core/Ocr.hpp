@@ -1,9 +1,9 @@
 /*
- * @name Filesystem Database Module
- * @author Branden Lee
+ * @name BookFiler™ Library - Image to hOCR
  * @version 1.00
  * @license GNU LGPL v3
- * @brief filesystem database and utilities
+ * @brief Converts an image to hOCR. hOCR is data representation from running
+ * an OCR .
  */
 
 #ifndef BOOKFILER_LIB_IMAGE_TO_HOCR_OCR_H
@@ -22,8 +22,10 @@
 #include <thread>
 #include <unordered_map>
 
-// Config
-#include "config.hpp"
+/* boost 1.72.0
+ * License: Boost Software License (similar to BSD and MIT)
+ */
+#include <boost/signals2.hpp>
 
 /* rapidjson v1.1 (2016-8-25)
  * Developed by Tencent
@@ -55,24 +57,14 @@
  */
 namespace bookfiler {
 
-class OcrMonitorInternal : public OcrMonitor {
-public:
-  std::shared_ptr<ETEXT_DESC> monitor;
-  OcrMonitorInternal();
-  OcrMonitorInternal(std::shared_ptr<ETEXT_DESC> monitor_);
-  ~OcrMonitorInternal();
-  unsigned long getAvailable();
-  unsigned long getTotal();
-};
-
-class OcrInternal : public Ocr,
-                    public std::enable_shared_from_this<OcrInternal> {
+class OcrInternal : public std::enable_shared_from_this<OcrInternal> {
 private:
   std::shared_ptr<tesseract::TessBaseAPI> api;
   std::shared_ptr<OcrMonitorInternal> monitor;
-  std::function<void(std::shared_ptr<Ocr>)> recognizeCallback;
   std::shared_ptr<Pixmap> pixmap;
   Pix *image;
+  boost::signals2::signal<void(std::shared_ptr<OcrInternal>)>
+      signalRecognizeDone;
 
 public:
   OcrInternal();
@@ -88,7 +80,7 @@ public:
   void setDataPath(std::string);
   void recognize();
   void recognizeThread();
-  void onRecognizeDone(std::function<void(std::shared_ptr<Ocr>)>);
+  void connectRecognizeDone(std::function<void(std::shared_ptr<OcrInternal>)>);
   std::shared_ptr<OcrMonitor> getRecognizeMonitor();
   std::shared_ptr<OcrMonitor> getHocrMonitor();
   std::string getHocr();

@@ -39,12 +39,16 @@ link_directories()
 # Set up source files
 set(SOURCES
     src/core/Ocr.cpp
+    src/core/OcrMonitor.cpp
+    src/core/OcrApplication.cpp
 )
 
 set(HEADERS
     src/core/config.hpp
 
     src/core/Ocr.hpp
+    src/core/OcrMonitor.hpp
+    src/core/OcrApplication.hpp
 
     include/BookFiler-Lib-image-to-hOCR/Interface.hpp
 )

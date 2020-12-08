@@ -1,9 +1,9 @@
 /*
- * @name Filesystem Database Module
- * @author Branden Lee
+ * @name BookFiler™ Library - Image to hOCR
  * @version 1.00
  * @license GNU LGPL v3
- * @brief filesystem database and utilities
+ * @brief Converts an image to hOCR. hOCR is data representation from running
+ * an OCR .
  */
 
 // Local Project
@@ -13,15 +13,6 @@
  * bookfiler = BookFiler™
  */
 namespace bookfiler {
-
-OcrMonitorInternal::OcrMonitorInternal() {
-  monitor = std::make_shared<ETEXT_DESC>();
-}
-OcrMonitorInternal::OcrMonitorInternal(std::shared_ptr<ETEXT_DESC> monitor_)
-    : monitor(monitor_) {}
-OcrMonitorInternal::~OcrMonitorInternal() {}
-unsigned long OcrMonitorInternal::getAvailable() { return monitor->count; }
-unsigned long OcrMonitorInternal::getTotal() { return monitor->progress; }
 
 OcrInternal::OcrInternal() { api = std::make_shared<tesseract::TessBaseAPI>(); }
 OcrInternal::~OcrInternal() {
@@ -46,14 +37,14 @@ bool OcrInternal::openImageFile(std::string imagePath) {
   pixmap->bitsPerPixel = image->d;
   pixmap->informat = image->informat;
   pixmap->samplesPerPixel = image->spp;
-  pixmap->widthBytes = pixmap->width * pixmap->bitsPerPixel/8;
+  pixmap->widthBytes = pixmap->width * pixmap->bitsPerPixel / 8;
   api->SetImage(image);
 
   std::cout << "bookfiler::OcrInternal::openImageFile(" << imagePath
             << ")\ninformat: " << image->informat
             << " special: " << image->special
-            << " colormap: " << image->colormap << " spp: " << image->spp << " depth: " << image->d
-            << std::endl;
+            << " colormap: " << image->colormap << " spp: " << image->spp
+            << " depth: " << image->d << std::endl;
   return true;
 }
 
@@ -71,8 +62,7 @@ std::shared_ptr<Pixmap> OcrInternal::getPixmap() {
   return pixmap;
 }
 
-void OcrInternal::setMode(std::string) {
-  std::string dataPath = "traineddata";
+void OcrInternal::setMode(std::string dataPath) {
   std::string language = "eng";
   /*
    * OCR Engine modes:
@@ -125,7 +115,8 @@ void OcrInternal::setDataPath(std::string) {}
 void OcrInternal::recognize() {
   monitor = std::make_shared<OcrMonitorInternal>();
   std::thread t1(&OcrInternal::recognizeThread, this);
-  t1.detach();
+  t1.join();
+  signalRecognizeDone(shared_from_this());
 }
 
 void OcrInternal::recognizeThread() {
@@ -133,13 +124,14 @@ void OcrInternal::recognizeThread() {
   /* returns a shared_ptr which shares ownership of *this
    * C++11 feature
    */
-  recognizeCallback(shared_from_this());
+  //signalRecognizeDone(shared_from_this());
 }
 
-void OcrInternal::onRecognizeDone(
-    std::function<void(std::shared_ptr<Ocr>)> callback) {
-  recognizeCallback = callback;
+void OcrInternal::connectRecognizeDone(
+    std::function<void(std::shared_ptr<OcrInternal>)> cb) {
+  signalRecognizeDone.connect(cb);
 }
+
 std::shared_ptr<OcrMonitor> OcrInternal::getRecognizeMonitor() {
   return monitor;
 }
